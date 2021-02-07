@@ -14,7 +14,7 @@ class ES:
 
     def get_indices_today(self):
         date_today = datetime.date.today().strftime('%Y.%m.%d')
-        date_yesterday = (datetime.date.today() + datetime.timedelta(-1)).strftime('%Y.%m.%d')
+        date_yesterday = (datetime.date.today() + datetime.timedelta(-2)).strftime('%Y.%m.%d')
         indices_list = self.es.cat.indices().split('\n')
         indices_list_yes = []
         for line in indices_list:
@@ -36,28 +36,23 @@ class ES:
         return index_doc_count
 
     def get_indices_mapping(self, index):
-        indices_mapping = self.es.indices.get_mapping(index=index)
+        indices_mapping = self.es.indices.get_mapping(index=index)[index]['mappings']
         return indices_mapping
 
     def put_indices_mapping(self, index, mapping):
         self.es.indices.put_mapping(mapping, index=index)
 
     def create_indices(self, index, mapping):
-        self.es.indices.create(index)
-        self.es.indices.put_mapping(mapping, index=index)
+        if not self.es.indices.exists(index):
+            self.es.indices.create(index)
+            self.es.indices.put_mapping(mapping, index=index)
+        else:
+            log.warn('index %s already exist cluster, do not repeat create.' % (index))
+            pass
 
-    def create_indices_tomorrow(self):
-        date_tomor = (datetime.date.today() + datetime.timedelta(+1)).strftime('%Y.%m.%d')
-        index_list_tomor = []
-        for index_patter in self.get_index_pattern_list():
-            index_name_tomor = index_patter+date_tomor
-            index_list_tomor.append(index_name_tomor)
-            self.create_indices()
-        return index_list_tomor
-
-    def reindex_indices(self, source_index, dest_index):
-        reindex_body = {"source": {"index": source_index}, "dest": {"index": dest_index}}
-        self.es.reindex(body=reindex_body, wait_for_completion=False)
+    # def reindex_indices(self, source_index, dest_index):
+    #     reindex_body = {"source": {"index": source_index}, "dest": {"index": dest_index}}
+    #     self.es.reindex(body=reindex_body, wait_for_completion=False)
 
 
 def main():
@@ -65,22 +60,15 @@ def main():
     Port = 9200
     es_client = ES(ES_node, Port)
     if es_client.es_ping and (es_client.get_cluster_status() != 'red'):
-        print(es_client.create_indices_tomorrow())
-
-
-        # index_1 = 'test-indices-2020.01.17'
-        # index_mapping = es_client.get_indices_mapping(index_1)[index_1]['mappings']
-        # index_2 = ['test-indices-1-2021.02.05', 'test-indices-2-2021.02.05', 'test-indices-3-2021.02.05', 'test-indices-4-2021.02.05', 'test-indices-5-2021.02.05']
-        # for index in index_2:
-        #     es_client.reindex_indices(index_1, index)
-        #     print(index + 'is reindex.')
-        # # print(es_client.get_cat_indices())
-
-        # print(es_client.get_indices_doc_count(index))
-        # print(es_client.get_indices_doc_count(index_2))
-        # #es_client.create_indices(index_2, index_mapping)
-        #index_2_mapping = es_client.get_indices_mapping(index_2)[index_2]['mappings']
-        #print(index_2_mapping)
+        date_today = (datetime.date.today() + datetime.timedelta(-2)).strftime('%Y.%m.%d')
+        date_tomorrow = (datetime.date.today() + datetime.timedelta(+1)).strftime('%Y.%m.%d')
+        print(es_client.get_index_pattern_list())
+        for index_pattern in es_client.get_index_pattern_list():
+            index_name_today = index_pattern + date_today
+            index_name_tomor = index_pattern + date_tomorrow
+            log.info('index_name_tomorrow is %s' % (index_name_tomor))
+            index_mapping = es_client.get_indices_mapping(index_name_today)
+            es_client.create_indices(index_name_tomor, index_mapping)
     else:
         log.warn('es node connection error or cluser satus is red.')
 

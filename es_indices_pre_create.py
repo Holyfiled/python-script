@@ -26,6 +26,15 @@ class ES:
         logger.info('Today indices total number: %d, indices list: %s' % (len(indices_list_today), indices_list_today))
         return indices_list_today
 
+    def get_indices_tomorrow(self, date_tomorrow):
+        indices_list = self.es.cat.indices().split('\n')
+        indices_list_tomorrow = []
+        for line in indices_list:
+            if len(line) > 0 and date_tomorrow in line:
+                index_name = line.split(' ')[2]
+                indices_list_tomorrow.append(index_name)
+        logger.info('Tomorrow indices total number: %d, indices list: %s' % (len(indices_list_tomorrow), indices_list_tomorrow))
+
     def get_index_pattern_list(self):
         index_patten_list = []
         for index_name in self.get_indices_today():
@@ -65,7 +74,9 @@ class ES:
 def main():
     ES_node = ["111.229.152.122"]
     Port = 9200
-    es_client = ES(ES_node, Port)
+    auth_user = ''
+    auth_passwd = ''
+    es_client = ES(ES_node, Port, auth_name=auth_user, auth_pass=auth_passwd)
     if es_client.es_ping and (es_client.get_cluster_status() != 'red'):
         date_today = datetime.date.today().strftime('%Y.%m.%d')
         date_tomorrow = (datetime.date.today() + datetime.timedelta(+1)).strftime('%Y.%m.%d')
@@ -73,7 +84,10 @@ def main():
             index_name_today = index_pattern + date_today
             index_name_tomor = index_pattern + date_tomorrow
             index_mapping = es_client.get_indices_mapping(index_name_today)
-            es_client.create_indices(index_name_tomor, index_mapping)
+            #logger.info(index_name_tomor)
+            #es_client.create_indices(index_name_tomor, index_mapping)
+        es_client.get_indices_tomorrow(date_tomorrow)
+        logger.info('Prepare create indices end.')
     else:
         logger.warn('es node connection error or cluser satus is red.')
 

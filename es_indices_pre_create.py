@@ -1,6 +1,8 @@
 from elasticsearch import Elasticsearch
 import datetime
-import logging as log
+import logging as logger
+
+logger.basicConfig(level=logger.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 class ES:
@@ -10,18 +12,18 @@ class ES:
 
     def get_cluster_status(self):
         cluster_status = self.es.cat.health().split(' ')[3]
+        logger.info('ES cluster status is %s' % (cluster_status))
         return cluster_status
 
     def get_indices_today(self):
         date_today = datetime.date.today().strftime('%Y.%m.%d')
-        date_yesterday = (datetime.date.today() + datetime.timedelta(-2)).strftime('%Y.%m.%d')
         indices_list = self.es.cat.indices().split('\n')
-        indices_list_yes = []
+        indices_list_today = []
         for line in indices_list:
-            if len(line) > 0 and date_yesterday in line:
+            if len(line) > 0 and date_today in line:
                 index_name = line.split(' ')[2]
-                indices_list_yes.append(index_name)
-        return indices_list_yes
+                indices_list_today.append(index_name)
+        return indices_list_today
 
     def get_index_pattern_list(self):
         index_patten_list = []
@@ -44,10 +46,14 @@ class ES:
 
     def create_indices(self, index, mapping):
         if not self.es.indices.exists(index):
+            logger.info('Prepare create index %s...' % (index))
             self.es.indices.create(index)
+            logger.info('Created index %s.' % (index))
+            logger.info('Prepare put index %s mapping...' % (index))
             self.es.indices.put_mapping(mapping, index=index)
+            logger.info('Put index %s mapping end.' % (index))
         else:
-            log.warn('index %s already exist cluster, do not repeat create.' % (index))
+            logger.warn('index %s already exist cluster, do not repeat create.' % (index))
             pass
 
     # def reindex_indices(self, source_index, dest_index):
@@ -60,17 +66,15 @@ def main():
     Port = 9200
     es_client = ES(ES_node, Port)
     if es_client.es_ping and (es_client.get_cluster_status() != 'red'):
-        date_today = (datetime.date.today() + datetime.timedelta(-2)).strftime('%Y.%m.%d')
+        date_today = datetime.date.today().strftime('%Y.%m.%d')
         date_tomorrow = (datetime.date.today() + datetime.timedelta(+1)).strftime('%Y.%m.%d')
-        print(es_client.get_index_pattern_list())
         for index_pattern in es_client.get_index_pattern_list():
             index_name_today = index_pattern + date_today
             index_name_tomor = index_pattern + date_tomorrow
-            log.info('index_name_tomorrow is %s' % (index_name_tomor))
             index_mapping = es_client.get_indices_mapping(index_name_today)
             es_client.create_indices(index_name_tomor, index_mapping)
     else:
-        log.warn('es node connection error or cluser satus is red.')
+        logger.warn('es node connection error or cluser satus is red.')
 
 
 if __name__ == '__main__':

@@ -23,6 +23,7 @@ class ES:
             if len(line) > 0 and date_today in line:
                 index_name = line.split(' ')[2]
                 indices_list_today.append(index_name)
+        logger.info('Today indices total number: %d, indices list: %s' % (len(indices_list_today), indices_list_today))
         return indices_list_today
 
     def get_index_pattern_list(self):

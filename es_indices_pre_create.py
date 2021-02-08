@@ -15,32 +15,26 @@ class ES:
         logger.info('ES cluster status is %s' % (cluster_status))
         return cluster_status
 
-    def get_indices_today(self):
-        date_today = datetime.date.today().strftime('%Y.%m.%d')
-        indices_list = self.es.cat.indices().split('\n')
-        indices_list_today = []
-        for line in indices_list:
-            if len(line) > 0 and date_today in line:
+    # 方法：获取某天的全部indices name，传参：时间字符串，返回值：某天的所有索引名称（list）
+    def get_indices_info(self, date_day):
+        indices_info_list = self.es.cat.indices().split('\n')
+        indices_day_list = []
+        for line in indices_info_list:
+            if len(line) > 0 and (date_day in line):
                 index_name = line.split(' ')[2]
-                indices_list_today.append(index_name)
-        logger.info('Today indices total number: %d, indices list: %s' % (len(indices_list_today), indices_list_today))
-        return indices_list_today
+                if not index_name.startswith('.'):
+                    indices_day_list.append(index_name)
+        logger.info('Date: %s, total indices numbers: %d, indices list: %s' % (date_day, len(indices_day_list), indices_day_list))
+        return indices_day_list
 
-    def get_indices_tomorrow(self, date_tomorrow):
-        indices_list = self.es.cat.indices().split('\n')
-        indices_list_tomorrow = []
-        for line in indices_list:
-            if len(line) > 0 and date_tomorrow in line:
-                index_name = line.split(' ')[2]
-                indices_list_tomorrow.append(index_name)
-        logger.info('Tomorrow indices total number: %d, indices list: %s' % (len(indices_list_tomorrow), indices_list_tomorrow))
-
-    def get_index_pattern_list(self):
+    # 方法：获取某天的去掉时间后缀的indices name，传参：时间字符串，返回值：某天的所有去掉时间后缀的索引名称（list）
+    def get_index_pattern_list(self, date_day):
         index_patten_list = []
-        for index_name in self.get_indices_today():
+        for index_name in self.get_indices_info(date_day):
             if self.get_indices_doc_count(index_name) != '0':
                 index_patten_name = index_name[:-10]
                 index_patten_list.append(index_patten_name)
+        logger.info('Date: %s, total index pattern numbers: %d, index pattern list: %s' % (date_day, len(index_patten_list), index_patten_list))
         return index_patten_list
 
     def get_indices_doc_count(self, index):
@@ -51,9 +45,7 @@ class ES:
         indices_mapping = self.es.indices.get_mapping(index=index)[index]['mappings']
         return indices_mapping
 
-    def put_indices_mapping(self, index, mapping):
-        self.es.indices.put_mapping(mapping, index=index)
-
+    #方法：用于创建索引，传参两个：索引名str和索引mapping（dict body）
     def create_indices(self, index, mapping):
         if not self.es.indices.exists(index):
             logger.info('Prepare create index %s...' % (index))
@@ -78,15 +70,17 @@ def main():
     auth_passwd = ''
     es_client = ES(ES_node, Port, auth_name=auth_user, auth_pass=auth_passwd)
     if es_client.es_ping and (es_client.get_cluster_status() != 'red'):
+        # 获取today tomorrow 时间字符串格式，对应索引时间后缀
         date_today = datetime.date.today().strftime('%Y.%m.%d')
         date_tomorrow = (datetime.date.today() + datetime.timedelta(+1)).strftime('%Y.%m.%d')
-        for index_pattern in es_client.get_index_pattern_list():
+        # 遍历今天的索引，去掉时间后缀，获取今天索引的mapping，用于创建明天的索引
+        for index_pattern in es_client.get_index_pattern_list(date_today):
             index_name_today = index_pattern + date_today
             index_name_tomor = index_pattern + date_tomorrow
             index_mapping = es_client.get_indices_mapping(index_name_today)
             #logger.info(index_name_tomor)
-            #es_client.create_indices(index_name_tomor, index_mapping)
-        es_client.get_indices_tomorrow(date_tomorrow)
+            es_client.create_indices(index_name_tomor, index_mapping)
+        es_client.get_indices_info(date_tomorrow)
         logger.info('Prepare create indices end.')
     else:
         logger.warn('es node connection error or cluser satus is red.')

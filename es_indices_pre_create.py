@@ -64,7 +64,7 @@ class ES:
 
 
 def main():
-    ES_node = ["111.229.152.122"]
+    ES_node = ["127.0.0.1"]
     Port = 9200
     auth_user = ''
     auth_passwd = ''

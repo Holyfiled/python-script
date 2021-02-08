@@ -72,6 +72,7 @@ def main():
     else:
         logger.warn('es node connection error or cluser satus is red.')
 
+        
 if __name__ == '__main__':
     main()
 

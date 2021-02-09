@@ -33,7 +33,7 @@ class ES:
 
 def main():
     if len(sys.argv) == 4:
-        ES_node = ["111.229.152.122"]
+        ES_node = ["127.0.0.1"]
         Port = 9200
         auth_user = ''
         auth_passwd = ''
@@ -41,9 +41,9 @@ def main():
         logger.info('ES cluster status is %s' % (es_client.es_status))
         if es_client.es_ping and (es_client.es_status != 'red'):
             index_pattern_name = sys.argv[1]
+            days_timedelta = int(sys.argv[3])
             date_result = [ int(i) for i in sys.argv[2].split('.')]
             year, month, day = date_result
-            days_timedelta = int(sys.argv[3])
             es_backup_repository = 's3_backup_repository'
             for date_day in es_client.get_restore_time_interval(year, month, day, days=days_timedelta):
                 es_backup_snapshot = 'prod-log-backup-' + date_day
@@ -54,7 +54,6 @@ def main():
             logger.warn('es node connection error or cluser satus is red.')
     else:
         logger.error('Please add 3 parmeters, eg: test.py kong-access-self-prod 2021.01.01 +5')
-        pass
 
 
 if __name__ == '__main__':

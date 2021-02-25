@@ -9,7 +9,7 @@ logger.basicConfig(level=logger.INFO, format='%(asctime)s - %(name)s - %(levelna
 
 class ES:
     def __init__(self, node, Port, auth_name='', auth_pass=''):
-        self.es = Elasticsearch(hosts=node, port=Port, http_auth=(auth_name, auth_pass), scheme="http")
+        self.es = Elasticsearch(timeout=300, max_retries=10, retry_on_timeout=True, hosts=node, port=Port, http_auth=(auth_name, auth_pass), scheme="http")
         self.es_ping = self.es.ping()
         self.es_status = self.es.cat.health().split(' ')[3]
 
@@ -19,7 +19,7 @@ class ES:
             "ignore_unavailable": "true",
             "include_global_state": "false"
         }
-        self.es.snapshot.restore(repository, snapshot, body=body)
+        self.es.snapshot.restore(repository, snapshot, body=body, wait_for_completion=True)
 
     def get_restore_time_interval(self, y, m, d, days):
         date_time_interval_list = []

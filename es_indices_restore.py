@@ -17,7 +17,10 @@ class ES:
         body = {
             "indices": index,
             "ignore_unavailable": "true",
-            "include_global_state": "false"
+            "include_global_state": "false",
+            #"index_settings": {
+            #    "index.number_of_replicas": 0
+            #}
         }
         self.es.snapshot.restore(repository, snapshot, body=body, wait_for_completion=True)
 

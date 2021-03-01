@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-# pip 
+# pip3 install kafka-python
 from kafka.admin import KafkaAdminClient
-
 
 
 BOOTSTRAP_SERVERS = '192.168.32.128:9092'

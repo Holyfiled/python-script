@@ -19,10 +19,12 @@ def get_kafka_consumergroup():
 
 def get_consumer_client_host():
     consumer_and_topic = dict()
+    group_consumer_and_topic = dict()
     consumer_host_ip = set()
     consumer_group = get_kafka_consumergroup()
     consumer_group_info = kafka_client.describe_consumer_groups(consumer_group)
     for line in consumer_group_info:
+        consumer_group_name = line.group
         for consumer_member in line.members:
             topics = set()
             consumer_ip = consumer_member.client_host
@@ -33,16 +35,18 @@ def get_consumer_client_host():
                 consumer_and_topic[consumer_ip] = topics | consumer_and_topic[consumer_ip]
             else:
                 consumer_and_topic[consumer_ip] = topics
-    return consumer_and_topic
+        group_consumer_and_topic[consumer_group_name] = consumer_and_topic
+    print('Consumer list is: {}'.format(consumer_host_ip))
+    return group_consumer_and_topic, consumer_host_ip
 
 
 def get_consumers_topics(consumer_dict):
-    print('Consumer list is: {}'.format(consumer_dict.keys()))
-    print('consumer\'s topics list is:')
-    for consumer_ip, topics in consumer_dict.items():
-        print(consumer_ip)
-        for topic in topics:
-            print(topic)
+    for k, v in consumer_dict.items():
+        print('ConsumerGroup is: {}'.format(k))
+        for k1, v1 in v.items():
+            print(k1)
+            for topic in v1:
+                print(topic)
 
 
 def main():

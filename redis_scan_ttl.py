@@ -42,7 +42,7 @@ def scan_ttl_key():
                         if redis_cli.ttl(key) == -1:
                             key_ttl_count += 1
                             file.write('db' + str(db_index) + " " + str(redis_cli.type(key)) + " " + str(key)+'\n')
-                    file.close()
+                file.close()
                 logger.info('Write db%d no ttl keys to file %s' % (db_index, key_output_file))
         logger.info('End the task of keys scan.')
         logger.info('redis total keys count: %d, no ttl keys count: %d' % (key_count, key_ttl_count))

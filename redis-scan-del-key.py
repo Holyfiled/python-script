@@ -9,7 +9,7 @@ redis_host = '192.168.32.128'
 redis_port = 6379
 redis_passwd = 'Changeme_123'
 date_today = datetime.date.today().strftime('%Y-%m-%d')
-key_name = 'todov2:be:sessions*'
+key_name = 'sessions*'
 
 def redis_cli_init(db_index):
     redis_connect_pool = redis.ConnectionPool(host=redis_host, port=redis_port, password=redis_passwd, max_connections=50, db=db_index)

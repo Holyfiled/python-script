@@ -20,11 +20,13 @@ class Redis:
 
     def redis_flush_db(self):
         mem_used_ratio = self.get_mem_used_ratio()
-        print(type(mem_used_ratio), mem_used_ratio)
         if mem_used_ratio > 90:
-            logger.warn('redis mem used ratio: %s ' % (mem_used_ratio))
+            logger.warn('Redis mem used ratio: %s%%' % (mem_used_ratio))
+            logger.info('Prepare flush all keys in Redis...')
+            #self.redis_cli.flushall()
+            logger.info('End flush all keys in Redis')
         else:
-            logger.info('redis mem used ratio: %s ' % (mem_used_ratio))
+            logger.info('Redis mem used ratio: %s%%, nothing to do.' % (mem_used_ratio))
 
 
 def main():

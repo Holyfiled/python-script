@@ -151,6 +151,32 @@ class Redis():
         for client in client_list:
             print('addr:' + client['addr'] + " " + 'age:' + client['age'] + " " + 'idle:' + client['idle'] + " " + 'cmd:' + client['cmd'])
         print('Number of client list: %d' % (len(client_list)))
+
+        def kill_client(self):
+        client_list = self.redis_cli.client_list()
+        print('Number of client list: %d' % (len(client_list)))
+        if len(client_list) > 1:
+            logger.info('These client connections will be killed, client list: ')
+            for client in client_list:
+                if client['flags'] in ('N', 'P') and str(client['cmd']).lower() != 'client':
+                    client_str = 'addr:' + client['addr'] + " " + 'age:' + client['age'] + " " + 'flags:' + client['flags'] + " " + 'idle:' + client[
+                    'idle'] + " " + 'cmd:' + client['cmd']
+                    #self.redis_cli.client_kill(client['addr'])
+                    logger.info('%s has been killed' % (client_str))
+                elif str(client['cmd']).lower() != 'client':
+                    client_str = 'addr:' + client['addr'] + " " + 'age:' + client['age'] + " " + 'flags:' + client['flags'] + " " + 'idle:' + client['idle'] + " " + 'cmd:' + client['cmd']
+                    print(client_str)
+        else:
+            for client in client_list:
+                client_str = 'addr:' + client['addr'] + " " + 'age:' + client['age'] + " " + 'flags:' + client[
+                    'flags'] + " " + 'idle:' + client['idle'] + " " + 'cmd:' + client['cmd']
+                print(client_str)
+
+    def get_mem_used_ratio(self):
+        mem_used = self.redis_cli.info()['used_memory']
+        mem_max = self.redis_cli.info()['maxmemory']
+        mem_used_ratio = int((mem_used / mem_max) * 100)
+        return mem_used_ratio
  
  
 def main():
